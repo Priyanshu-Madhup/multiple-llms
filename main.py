@@ -11,8 +11,12 @@ from google.genai import types
 from PIL import Image
 from io import BytesIO
 
+# Initialize default model name for page title
+if "selected_model_name" not in st.session_state:
+    st.session_state.selected_model_name = "LLM Chat"
+
 # Streamlit page config
-st.set_page_config(page_title="LLM Chat (Groq + OpenRouter + Serper)", page_icon="💬", layout="centered")
+st.set_page_config(page_title=st.session_state.selected_model_name, page_icon="💬", layout="centered")
 
 # Session state initialization
 if "api_key" not in st.session_state:
@@ -26,9 +30,9 @@ if "messages" not in st.session_state:
 if "provider" not in st.session_state:
     st.session_state.provider = "Groq"
 if "selected_model_name_groq" not in st.session_state:
-    st.session_state.selected_model_name_groq = "Llama 3.3"
+    st.session_state.selected_model_name_groq = "Meta Llama 3.3"
 if "selected_model_name_openrouter" not in st.session_state:
-    st.session_state.selected_model_name_openrouter = "Llama 3.3"
+    st.session_state.selected_model_name_openrouter = "Meta Llama 3.3"
 if "enable_serper" not in st.session_state:
     st.session_state.enable_serper = False
 if "search_method" not in st.session_state:
@@ -39,20 +43,20 @@ if "image_generation_mode" not in st.session_state:
 # Model options per provider
 model_options = {
     "Groq": {
-        "Llama 3.3": "llama-3.3-70b-versatile",
+        "Meta Llama 3.3": "llama-3.3-70b-versatile",
         "DeepSeek R1": "deepseek-r1-distill-llama-70b",
-        "Llama 4 Mavrick" : "meta-llama/llama-4-maverick-17b-128e-instruct",
-        "Llama 4 Scout" : "meta-llama/llama-4-scout-17b-16e-instruct",
+        "Meta Llama 4 Maverick" : "meta-llama/llama-4-maverick-17b-128e-instruct",
+        "Meta Llama 4 Scout" : "meta-llama/llama-4-scout-17b-16e-instruct",
         "Mistral Saba" : "mistral-saba-24b"
     },
     "OpenRouter": {
         "DeepSeek R1": "deepseek/deepseek-r1:free",
         "DeepSeek V3": "deepseek/deepseek-chat-v3-0324:free",
-        "Llama 4 Mavrick": "meta-llama/llama-4-maverick:free",
-        "Llama 4 Scout": "meta-llama/llama-4-scout:free",
-        "Llama 3.3": "meta-llama/llama-3.3-70b-instruct:free",
-        #"Gemini 2.5 pro": "google/gemini-2.5-pro-exp-03-25:free",
-        "Gemma 3": "google/gemma-3-27b-it:free"
+        "Meta Llama 4 Maverick": "meta-llama/llama-4-maverick:free",
+        "Meta Llama 4 Scout": "meta-llama/llama-4-scout:free",
+        "Meta Llama 3.3": "meta-llama/llama-3.3-70b-instruct:free",
+        #"Google Gemini 2.5 Pro": "google/gemini-2.5-pro-exp-03-25:free",
+        "Google Gemma 3": "google/gemma-3-27b-it:free"
     }
 }
 
@@ -69,12 +73,12 @@ image_capable_models = [
 model_logos = {
     "DeepSeek R1": "deepseeklogo.png",
     "DeepSeek V3": "deepseeklogo.png",
-    "Llama 4 Mavrick": "llamalogo.jpeg",
-    "Llama 4 Scout": "llamalogo.jpeg",
-    "Llama 3.3": "llamalogo.jpeg",
-    "Gemini 2.5 pro": "gemini logo.png",
-    "Gemma 3": "gemmalogo.jpeg",
-    "Mistral Saba" : "mistrallogo.png"
+    "Meta Llama 4 Maverick": "llamalogo.jpeg",
+    "Meta Llama 4 Scout": "llamalogo.jpeg",
+    "Meta Llama 3.3": "llamalogo.jpeg",
+    "Google Gemini 2.5 Pro": "gemini logo.png",
+    "Google Gemma 3": "gemmalogo.jpeg",
+    "Mistral Saba": "mistrallogo.png"
 }
 
 # Function to search using Serper.dev with http.client (POST method)
@@ -232,11 +236,12 @@ with st.sidebar:
     else:
         model_names = list(model_options["OpenRouter"].keys())
         selected_model_name = st.selectbox("Select OpenRouter Model", options=model_names, index=model_names.index(st.session_state.selected_model_name_openrouter))
-        st.session_state.selected_model_name_openrouter = selected_model_name
-
-    # Unified selection
+        st.session_state.selected_model_name_openrouter = selected_model_name    # Unified selection
     st.session_state.selected_model_name = selected_model_name
     st.session_state.selected_model = model_options[provider][selected_model_name]
+    
+    # Update page title when model changes
+    st.query_params.model = selected_model_name
 
     st.info(f"Using {provider} / {selected_model_name}")
     st.caption(f"Model ID: {st.session_state.selected_model}")
@@ -327,17 +332,17 @@ try:
         st.markdown(
             f"""
             <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
-                <h1 style="margin: 0;">Multi LLM Chat</h1>
+                <h1 style="margin: 0;">{st.session_state.selected_model_name}</h1>
                 <img src="data:{image_mime};base64,{local_img_base64}" height="100" style="margin-left: 10px;">
             </div>
             """,
             unsafe_allow_html=True
         )
     else:
-        st.title("Multi LLM Chat")
+        st.title(st.session_state.selected_model_name)
 except Exception as e:
     st.error(f"Error loading logo: {str(e)}")
-    st.title("Multi LLM Chat")
+    st.title(st.session_state.selected_model_name)
 
 features_text = "Powered by " + st.session_state.selected_model_name + " via " + st.session_state.provider
 if st.session_state.enable_serper:
